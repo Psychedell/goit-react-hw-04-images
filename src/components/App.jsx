@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { WrapperApp } from './App.styled';
 import SearchBar from './Searchbar/Searchbar';
 import toast, { Toaster } from 'react-hot-toast';
@@ -7,158 +7,96 @@ import fetchImages from 'services/api';
 import Modal from 'components/Modal/Modal';
 import { Button } from 'components/Button/Button';
 import MyLoader from 'components/Loader/Loader';
-// import MyLoader from './Loader/Loader';
 
-export class App extends Component {
-  state = {
-    imageName: '',
-    resultList: [],
-    page: 1,
-    totalPages: 0,
-    loading: false,
-    isVisible: false,
-    showModal: false,
-    modalImage: '',
-    error: 'error',
+export const App = () => {
+  const [imageName, setImageName] = useState('');
+  const [resultList, setResultList] = useState([]);
+
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalImage, setModalImage] = useState('');
+
+  useEffect(() => {
+    fetchImages(imageName, page)
+      .then(data => {
+        if (imageName === '') {
+          return;
+        }
+
+        const { totalHits, hits } = data;
+
+        if (!hits.length) {
+          return toast.error(
+            'There is no images found with this search request'
+          );
+        }
+
+        setResultList(prevState => [...prevState, ...hits]);
+        setTotalPages(Math.ceil(totalHits / 12));
+        setIsVisible(totalHits / 12 > page);
+      })
+      .catch(error => {
+        toast.error('Please, try again later!');
+        console.log(error);
+      })
+      .finally(() => setLoading(false));
+  }, [imageName, page]);
+
+  const handleFormSubmit = imageName => {
+    setImageName(imageName);
+    setLoading(true);
+    setResultList([]);
+    setPage(1);
   };
 
-  componentDidMount() {
-    this.setState({ resultList: [] });
-  }
-
-  // Проверить почему не работает...
-  // componentDidUpdate(_, prevState) {
-  //   const { imageName, page, resultList } = this.state;
-
-  //   if (prevState.imageName !== imageName || prevState.page !== page) {
-  //     this.setState({ loading: true, resultList: [], page: 1 });
-
-  //     fetchImages(imageName, page)
-  //       .then(data => {
-  //         const { totalHits, hits } = data;
-
-  //         if (!hits.length) {
-  //           return toast.error(
-  //             'There is no images found with this search request'
-  //           );
-  //         }
-
-  //         this.setState({
-  //           resultList: [...resultList, ...hits],
-  //           totalPages: Math.ceil(totalHits / 12),
-  //           isVisible: totalHits / 12 > page,
-  //         });
-  //       })
-  //       .catch(error => this.setState({ error }))
-  //       .finally(() => this.setState({ loading: false }));
-  //   }
-  // }
-
-  componentDidUpdate(_, prevState) {
-    const { imageName, page, resultList } = this.state;
-
-    if (prevState.imageName !== imageName) {
-      this.setState({ loading: true, resultList: [], page: 1 });
-
-      fetchImages(imageName, page)
-        .then(data => {
-          const { totalHits, hits } = data;
-
-          if (!hits.length) {
-            return toast.error(
-              'There is no images found with this search request'
-            );
-          }
-
-          this.setState({
-            resultList: hits,
-            totalPages: Math.ceil(totalHits / 12),
-            isVisible: totalHits / 12 > this.state.page,
-          });
-        })
-        .catch(error => this.setState({ error }))
-        .finally(() => this.setState({ loading: false }));
-    }
-
-    if (prevState.page !== page) {
-      fetchImages(imageName, page).then(data => {
-        const { hits } = data;
-        this.setState({
-          resultList: [...resultList, ...hits],
-        });
-      });
-    }
-  }
-
-  handleFormSubmit = imageName => {
-    this.setState({ imageName });
-  };
-
-  largeImageFinder = event => {
-    const openImage = this.state.resultList.find(
+  const largeImageFinder = event => {
+    const openImage = resultList.find(
       image => image.webformatURL === event.currentTarget.src
     ).largeImageURL;
 
     return openImage;
   };
 
-  onImageClick = event => {
-    this.setState({
-      modalImage: this.largeImageFinder(event),
-      showModal: true,
-    });
+  const onImageClick = event => {
+    setModalImage(largeImageFinder(event));
+    setShowModal(true);
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({ showModal: !showModal }));
+  const toggleModal = () => {
+    setShowModal(!showModal);
+    // this.setState(({ showModal }) => ({ showModal: !showModal }));
   };
 
-  loadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
+  const loadMore = () => {
+    setPage(prevState => prevState + 1);
+    setLoading(true);
   };
 
-  render() {
-    const {
-      imageName,
-      loading,
-      isVisible,
-      page,
-      totalPages,
-      resultList,
-      showModal,
-      modalImage,
-    } = this.state;
-
-    return (
-      <>
-        <SearchBar onSubmit={this.handleFormSubmit} />
-        {loading && <MyLoader />}
-        {!imageName && <p>No results yet.</p>}
-        <WrapperApp>
-          <ImageGallery
-            resultList={resultList}
-            onImageClick={this.onImageClick}
-          />
-          <Toaster
-            toastOptions={{
-              duration: 2500,
-              style: {
-                background: '#fff',
-                color: '#3f51b5',
-                marginTop: 30,
-                marginRight: 50,
-              },
-            }}
-            position="top-right"
-          />
-        </WrapperApp>
-        {isVisible && totalPages > page && (
-          <Button onLoadMore={this.loadMore} />
-        )}
-        {showModal && (
-          <Modal modalImage={modalImage} closeModal={this.toggleModal} />
-        )}
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <SearchBar onSubmit={handleFormSubmit} />
+      {!imageName && <p>No results yet.</p>}
+      <WrapperApp>
+        <ImageGallery resultList={resultList} onImageClick={onImageClick} />
+        <Toaster
+          toastOptions={{
+            duration: 2500,
+            style: {
+              background: '#fff',
+              color: '#3f51b5',
+              marginTop: 30,
+              marginRight: 50,
+            },
+          }}
+          position="top-right"
+        />
+      </WrapperApp>
+      {isVisible && totalPages > page && <Button onLoadMore={loadMore} />}
+      {loading && <MyLoader />}
+      {showModal && <Modal modalImage={modalImage} closeModal={toggleModal} />}
+    </>
+  );
+};
