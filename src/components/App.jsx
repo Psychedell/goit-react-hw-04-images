@@ -20,12 +20,12 @@ export const App = () => {
   const [modalImage, setModalImage] = useState('');
 
   useEffect(() => {
+    if (imageName === '') {
+      return;
+    }
+
     fetchImages(imageName, page)
       .then(data => {
-        if (imageName === '') {
-          return;
-        }
-
         const { totalHits, hits } = data;
 
         if (!hits.length) {
