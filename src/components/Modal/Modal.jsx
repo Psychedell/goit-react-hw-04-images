@@ -1,46 +1,34 @@
-// import { ModalBackdrop, ModalContent } from './Modal.styled';
-
-// export const Modal = ({ modalImage, closeModal }) => {
-//   return (
-//     <ModalBackdrop>
-//       <ModalContent>
-//         <img src={modalImage} alt="Large scr"></img>
-//       </ModalContent>
-//     </ModalBackdrop>
-//   );
-// };
-
 import { ModalBackdrop, ModalContent } from './Modal.styled';
-import { Component } from 'react';
+import { useEffect } from 'react';
 
-export default class Modal extends Component {
-  componentDidMount() {
-    window.addEventListener('keydown', this.handleKeyDown);
-  }
+const Modal = ({ modalImage, closeModal }) => {
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
 
-  componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeyDown);
-  }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  });
 
-  handleKeyDown = event => {
+  const handleKeyDown = event => {
     if (event.code === `Escape`) {
-      this.props.closeModal();
+      closeModal();
     }
   };
 
-  handleBackdropClick = event => {
+  const handleBackdropClick = event => {
     if (event.target.nodeName === 'DIV') {
-      this.props.closeModal();
+      closeModal();
     }
   };
 
-  render() {
-    return (
-      <ModalBackdrop onClick={this.handleBackdropClick}>
-        <ModalContent>
-          <img src={this.props.modalImage} alt="Large scr"></img>
-        </ModalContent>
-      </ModalBackdrop>
-    );
-  }
-}
+  return (
+    <ModalBackdrop onClick={handleBackdropClick}>
+      <ModalContent>
+        <img src={modalImage} alt="Large scr"></img>
+      </ModalContent>
+    </ModalBackdrop>
+  );
+};
+
+export default Modal;

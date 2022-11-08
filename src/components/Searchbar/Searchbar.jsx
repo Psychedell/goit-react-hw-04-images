@@ -1,46 +1,44 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { FcSearch } from 'react-icons/fc';
 import { Searchbar } from './Searchbar.styled';
 import toast from 'react-hot-toast';
 
-export default class SearchBar extends Component {
-  state = {
-    imageName: '',
+const SearchBar = ({ onSubmit }) => {
+  const [imageName, setImageName] = useState('');
+
+  const handleNameChange = evt => {
+    setImageName(evt.currentTarget.value.toLowerCase().trim());
   };
 
-  handleNameChange = evt => {
-    this.setState({ imageName: evt.currentTarget.value.toLowerCase().trim() });
-  };
-
-  handleSubmit = evt => {
+  const handleSubmit = evt => {
     evt.preventDefault();
 
-    if (this.state.imageName.trim() === '') {
+    if (imageName.trim() === '') {
       return toast.error('Please, enter your search request.');
     }
 
-    this.props.onSubmit(this.state.imageName);
-    this.setState({ imageName: '' });
+    onSubmit(imageName);
+    setImageName('');
   };
 
-  render() {
-    return (
-      <Searchbar>
-        <form onSubmit={this.handleSubmit}>
-          <button type="submit">
-            <FcSearch style={{ marginRight: 5 }} />
-            <span>Search</span>
-          </button>
-          <input
-            type="text"
-            autoComplete="off"
-            autoFocus
-            value={this.state.imageName}
-            onChange={this.handleNameChange}
-            placeholder="Search images and photos"
-          />
-        </form>
-      </Searchbar>
-    );
-  }
-}
+  return (
+    <Searchbar>
+      <form onSubmit={handleSubmit}>
+        <button type="submit">
+          <FcSearch style={{ marginRight: 5 }} />
+          <span>Search</span>
+        </button>
+        <input
+          type="text"
+          autoComplete="off"
+          autoFocus
+          value={imageName}
+          onChange={handleNameChange}
+          placeholder="Search images and photos"
+        />
+      </form>
+    </Searchbar>
+  );
+};
+
+export default SearchBar;
